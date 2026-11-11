@@ -34,6 +34,9 @@ Name: "startup"; Description: "Start BoltDM in the system tray when I sign in to
 Name: "desktopicon"; Description: "Create desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 Name: "extensionchrome"; Description: "Set up the browser extension in Google Chrome (requires Chrome confirmation)"; GroupDescription: "Optional browser integration (not installed silently):"; Flags: unchecked
 Name: "extensionedge"; Description: "Set up the browser extension in Microsoft Edge (requires Edge confirmation)"; GroupDescription: "Optional browser integration (not installed silently):"; Flags: unchecked
+Name: "extensionbrave"; Description: "Set up the browser extension in Brave (requires Brave confirmation)"; GroupDescription: "Optional browser integration (not installed silently):"; Flags: unchecked
+Name: "extensionopera"; Description: "Set up the browser extension in Opera / Opera GX (requires Opera confirmation)"; GroupDescription: "Optional browser integration (not installed silently):"; Flags: unchecked
+Name: "extensionfirefox"; Description: "Set up in Firefox (temporary until restart; requires Mozilla signing for permanence)"; GroupDescription: "Optional browser integration (not installed silently):"; Flags: unchecked
 
 [Files]
 Source: "dist\BoltDM-windows-amd64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -54,5 +57,8 @@ Filename: "{app}\BoltDM-Launcher.exe"; Description: "Launch BoltDM"; Flags: post
 ; Opt-in setup opens the extensions page and copies the bundled folder path to
 ; clipboard. Neither Chrome nor Edge permits a consumer EXE to enable an
 ; unpacked extension without explicit interaction in the browser.
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Chrome -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionchrome; Flags: nowait skipifsilent runhidden
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Edge -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionedge; Flags: nowait skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Chrome -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionchrome; Flags: skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Edge -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionedge; Flags: skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Brave -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionbrave; Flags: skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Opera -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionopera; Flags: skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\tools\Install-Extension.ps1"" -Browser Firefox -ExtensionPath ""{app}\BoltDM-Companion"""; Tasks: extensionfirefox; Flags: skipifsilent runhidden
