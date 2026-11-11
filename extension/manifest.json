@@ -3,7 +3,7 @@
   "name": "BoltDM Companion",
   "version": "1.2.0",
   "description": "Capture browser downloads into BoltDM (opt-in), or collect matching links on a page.",
-  "minimum_chrome_version": "120",
+  "minimum_chrome_version": "121",
   "permissions": [
     "activeTab",
     "scripting",
@@ -16,7 +16,10 @@
     "http://127.0.0.1:17654/*"
   ],
   "background": {
-    "service_worker": "service_worker.js"
+    "service_worker": "service_worker.js",
+    "scripts": [
+      "service_worker.js"
+    ]
   },
   "action": {
     "default_title": "BoltDM",
@@ -31,5 +34,11 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "boltdm-companion@cryosimorgh.github.io",
+      "strict_min_version": "121.0"
+    }
   }
 }

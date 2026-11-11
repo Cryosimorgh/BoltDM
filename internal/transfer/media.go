@@ -65,6 +65,8 @@ func (e *MediaEngine) Download(ctx context.Context, task model.Task, progress Pr
 
 	args := e.args(task, root)
 	cmd := exec.CommandContext(ctx, e.ytdlp, args...)
+	cmd.Dir = root
+	cmd.Env = mediaSubprocessEnv(os.Environ(), runtime.GOOS)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("yt-dlp stdout: %w", err)
@@ -271,7 +273,9 @@ func discoverExecutable(configured string, names ...string) (string, error) {
 func executableVersion(path string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, path, "--version").Output()
+	cmd := exec.CommandContext(ctx, path, "--version")
+	cmd.Env = mediaSubprocessEnv(os.Environ(), runtime.GOOS)
+	out, err := cmd.Output()
 	if err != nil {
 		return "unknown"
 	}

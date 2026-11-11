@@ -77,7 +77,7 @@ The extension sends links directly to BoltDM on your computer. It does not use t
 
 The Windows release now includes `BoltDM-Setup-windows-amd64.exe`, a per-user installer that does not require administrator rights. It installs the native launcher, download service, tray icon, companion browser extension files, and an uninstaller. Startup at Windows sign-in is an optional task.
 
-During installation, **Chrome** and **Edge** each have an **unchecked** optional companion-extension setup checkbox. If selected, Setup opens that browser's extension-management page, opens the installed companion directory and copies its path to the clipboard. You then click **Developer mode → Load unpacked** and approve the requested permissions within the browser. This confirmation step cannot be automated for an unpublished unpacked extension. The installer never sets browser enterprise policies or forces an extension.
+During installation, **Chrome, Edge, Brave, Opera/Opera GX, and Firefox** have separate **unchecked** optional extension-setup checkboxes. The installer checks normal installation locations, opens the selected browser, displays the companion directory, and copies its path. For Chromium-based browsers, use **Developer mode → Load unpacked** and confirm permissions. For **Firefox**, open **about:debugging → This Firefox → Load Temporary Add-on**, then select `manifest.json`. Firefox temporary installations disappear on browser restart; a permanent Firefox add-on requires Mozilla signing. The installer never sets enterprise policies or silently enables an extension.
 
 To activate interception after adding the extension, turn on **Catch browser downloads automatically** in the extension popup; this remains off by default. Removing BoltDM uninstalls the bundled extension files; remove the loaded unpacked extension from the browser first to avoid leaving a broken entry.
 
@@ -110,6 +110,10 @@ Connections: 6
 This keeps 32 resume segments but uses at most 6 active connections for that file.
 
 You can also set concurrent files, per-host concurrency, minimum segment size, retries, defaults, native-engine speed limit, scheduled start time, and optional checksum verification.
+
+### Windows yt-dlp path errors (WinError 448)
+
+If a media download reports `[WinError 448] The path cannot be traversed because it contains an untrusted mount point` and identifies an unrelated executable directory (for example a broken reparse point under another app), yt-dlp may have encountered it while searching the Windows `PATH` for a helper program. BoltDM now removes inaccessible or untraversable entries **only from yt-dlp's child-process PATH** and sets its working directory to the configured download location. Your global Windows PATH is not modified. If this error continues, check that `yt-dlp.exe`, optional `ffmpeg.exe`, and the download destination are accessible from your Windows account; preserve the full error text for diagnosis.
 
 ## Speed limit
 
