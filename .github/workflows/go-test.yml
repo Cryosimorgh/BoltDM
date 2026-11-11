@@ -83,6 +83,9 @@ jobs:
           Copy-Item 'dist\BoltDM.exe', 'dist\BoltDM-Launcher.exe', 'dist\BoltDM.ico' $dir
           Copy-Item 'extension' "$dir\BoltDM-Companion" -Recurse
           Copy-Item 'Install-BoltDM.cmd' $dir
+          Invoke-WebRequest -Uri 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile "$dir\yt-dlp.exe"
+          & "$dir\yt-dlp.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw 'yt-dlp verification failed' }
       - name: Install Inno Setup compiler
         shell: powershell
         run: |
