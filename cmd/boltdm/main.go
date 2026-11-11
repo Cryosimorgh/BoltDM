@@ -20,6 +20,20 @@ import (
 )
 
 func main() {
+	// The launcher and Windows login shortcut both start the daemon quietly.
+	background := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--background" || arg == "--tray" {
+			background = true
+		}
+	}
+	alreadyRunning, releaseInstance, err := acquireInstance()
+	if err != nil { log.Fatal(err) }
+	if alreadyRunning {
+		if !background { _ = openBrowser("http://127.0.0.1:17654") }
+		return
+	}
+	defer releaseInstance()
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +86,7 @@ func main() {
 	)
 	defer stopTray()
 	time.Sleep(180 * time.Millisecond)
-	if os.Getenv("BOLTDM_NO_BROWSER") == "" && shouldOpenDashboard(runtime.GOOS, mgr.Config().LaunchMode) {
+	if !background && os.Getenv("BOLTDM_NO_BROWSER") == "" && shouldOpenDashboard(runtime.GOOS, mgr.Config().LaunchMode) {
 		_ = openBrowser("http://127.0.0.1:17654")
 	}
 	ch := make(chan os.Signal, 1)
