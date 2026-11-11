@@ -111,7 +111,7 @@ jobs:
       - name: Install Inno Setup compiler
         shell: powershell
         run: |
-          if (-not (Test-Path '${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe')) {
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
             choco install innosetup --yes --no-progress --limit-output
           }
 
