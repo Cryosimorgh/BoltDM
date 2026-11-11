@@ -27,6 +27,17 @@ jobs:
         run: go vet ./...
       - name: Build application
         run: go build ./cmd/boltdm
+      - name: Build launcher
+        run: go build ./cmd/launcher
+      - name: Generate and verify icon assets
+        shell: bash
+        run: |
+          go run ./cmd/icon-gen
+          test -s BoltDM.ico
+          test -s extension/icons/icon16.png
+          test -s extension/icons/icon32.png
+          test -s extension/icons/icon48.png
+          test -s extension/icons/icon128.png
       - name: Build updater
         run: go build ./cmd/updater
       - name: JavaScript syntax
@@ -37,6 +48,7 @@ jobs:
           node --check extension/content.js
           node --check extension/popup.js
           node --check extension/service_worker.js
+          node --test extension/service_worker.test.cjs
       - name: Linux packaging script syntax
         if: runner.os == 'Linux'
         run: bash -n build.sh install-linux.sh

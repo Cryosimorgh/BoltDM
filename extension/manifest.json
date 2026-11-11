@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "BoltDM Companion",
-  "version": "1.1.0",
-  "description": "Select one download control, discover matching links, and send the reviewed batch directly to BoltDM.",
+  "version": "1.2.0",
+  "description": "Capture browser downloads into BoltDM (opt-in), or collect matching links on a page.",
   "minimum_chrome_version": "120",
   "permissions": [
     "activeTab",
     "scripting",
-    "cookies"
+    "cookies",
+    "downloads",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>",

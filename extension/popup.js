@@ -7,3 +7,10 @@ chrome.runtime.sendMessage({type:'BOLTDM_HEALTH'}).then(r=>setHealth(!!r?.ok,r?.
 media.addEventListener('click',async()=>{media.disabled=true;try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!tab?.url)throw new Error('No active page URL.');const r=await chrome.runtime.sendMessage({type:'BOLTDM_DOWNLOAD_BATCH',urls:[tab.url],pageUrl:tab.url,userAgent:navigator.userAgent,engine:'media'});if(!r?.ok)throw new Error(r?.failed?.[0]?.error||'BoltDM rejected this media page.');window.close()}catch(e){setHealth(false,e.message);media.disabled=false}});
 start.addEventListener('click',async()=>{start.disabled=true;try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!tab?.id)throw new Error('No active tab.');await chrome.scripting.executeScript({target:{tabId:tab.id},files:['content.js']});await chrome.tabs.sendMessage(tab.id,{type:'BOLTDM_START_PICKER'});window.close()}catch(e){setHealth(false,e.message);start.disabled=false}});
 manager.addEventListener('click',()=>chrome.tabs.create({url:'http://127.0.0.1:17654'}));
+
+const autoCapture=document.getElementById('autoCapture');
+chrome.storage.local.get({autoCapture:false}).then(s=>{autoCapture.checked=!!s.autoCapture}).catch(()=>{autoCapture.disabled=true});
+autoCapture.addEventListener('change',async()=>{
+  try{await chrome.storage.local.set({autoCapture:autoCapture.checked})}
+  catch(e){autoCapture.checked=!autoCapture.checked;setHealth(false,'Cannot save capture preference')}
+});
