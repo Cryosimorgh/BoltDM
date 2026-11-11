@@ -80,9 +80,11 @@ jobs:
           $PackageDir = "dist\BoltDM-windows-amd64"
 
           Copy-Item "dist\BoltDM.exe" "$PackageDir\BoltDM.exe"
-          if (Test-Path "BoltDM.ico") {
-            Copy-Item "BoltDM.ico" "$PackageDir\BoltDM.ico"
-          }
+          Copy-Item "dist\BoltDM-Launcher.exe" "$PackageDir\BoltDM-Launcher.exe"
+          Copy-Item "extension" "$PackageDir\BoltDM-Companion" -Recurse
+          if (-not (Test-Path "$PackageDir\BoltDM-Companion\icons\icon128.png")) { throw "Extension icon missing" }
+          if (-not (Test-Path "BoltDM.ico")) { throw "Tray icon missing" }
+          Copy-Item "BoltDM.ico" "$PackageDir\BoltDM.ico"
           Copy-Item "Install-BoltDM.cmd" "$PackageDir\Install-BoltDM.cmd"
 
           if (-not (Test-Path "$PackageDir\yt-dlp.exe")) {
