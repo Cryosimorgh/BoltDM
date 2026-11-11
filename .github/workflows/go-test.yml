@@ -29,8 +29,15 @@ jobs:
         run: go build ./cmd/boltdm
       - name: Build launcher
         run: go build ./cmd/launcher
-      - name: Build icon generator
-        run: go build ./cmd/icon-gen
+      - name: Generate and verify icon assets
+        shell: bash
+        run: |
+          go run ./cmd/icon-gen
+          test -s BoltDM.ico
+          test -s extension/icons/icon16.png
+          test -s extension/icons/icon32.png
+          test -s extension/icons/icon48.png
+          test -s extension/icons/icon128.png
       - name: Build updater
         run: go build ./cmd/updater
       - name: JavaScript syntax
