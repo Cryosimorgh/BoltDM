@@ -73,6 +73,16 @@ The extension is made for pages that contain many similar download buttons.
 
 The extension sends links directly to BoltDM on your computer. It does not use the browser's normal download list and does not require Free Download Manager.
 
+### Catch browser downloads automatically (opt-in)
+
+1. Install the Windows release using `Install-BoltDM.cmd`; its standalone launcher also starts the background download listener at Windows sign-in.
+2. In Chrome/Edge, load the unpacked `BoltDM-Companion` folder from the release (or run `go run ./cmd/icon-gen` before loading the source `extension` folder).
+3. Open the extension popup and enable **Catch browser downloads automatically**.
+
+The extension hands supported HTTP/HTTPS downloads to BoltDM and cancels the browser copy **only after** the local API accepts the download. If BoltDM is not running or rejects the request, the browser continues downloading. Capture is disabled by default; it may not work for POST-generated, blob, or short-lived authenticated URLs. This is browser-extension interception, not system-wide network interception.
+
+To disable background startup, remove the `BoltDM` shortcut from `shell:startup` or disable it in Windows Startup Apps. The download service stays running when its dashboard tab closes.
+
 ## Download settings
 
 BoltDM keeps **segments** and **connections** separate.
@@ -213,9 +223,10 @@ In managed mode BoltDM starts aria2 on a random loopback-only port with a random
 
 The Windows release currently contains:
 
-- `BoltDM.exe`
-- `BoltDM.ico`
-- `BoltDM-Companion/`
+- `BoltDM.exe` (background download service and tray)
+- `BoltDM-Launcher.exe` (interactive desktop launcher)
+- `BoltDM.ico` (Windows tray and shortcuts)
+- `BoltDM-Companion/` (browser extension with icons)
 - `Install-BoltDM.cmd`
 - `BoltDM.exe.sha256`
 
@@ -223,11 +234,11 @@ The Windows release currently contains:
 
 ### Portable use
 
-Keep `BoltDM.exe` and `BoltDM.ico` in the same folder and run `BoltDM.exe`.
+Keep `BoltDM.exe`, `BoltDM-Launcher.exe` and `BoltDM.ico` in the same folder and run `BoltDM-Launcher.exe`. The launcher opens the dashboard; BoltDM continues downloading in the background after the browser closes. `BoltDM-Launcher.exe --background` starts the service without opening a window.
 
 ### Local install
 
-Run `Install-BoltDM.cmd`. It installs BoltDM to:
+Run `Install-BoltDM.cmd`. It creates desktop and Start Menu shortcuts for the standalone launcher and registers a per-user background startup shortcut, so the browser extension can hand off downloads after Windows sign-in. It installs BoltDM to:
 
 ```text
 %LOCALAPPDATA%\Programs\BoltDM
