@@ -44,6 +44,7 @@ jobs:
           node --check extension/content.js
           node --check extension/popup.js
           node --check extension/service_worker.js
+          node --test extension/service_worker.test.cjs
 
   windows:
     needs: test
