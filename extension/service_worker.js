@@ -46,3 +46,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 });
+
+
+// Opt-in automatic download interception. Never cancel the browser's download
+// unless BoltDM has explicitly accepted it.
+async function captureDownload(item) {
+  if (!item || item.state !== 'in_progress' || item.byExtensionId === chrome.runtime.id) return;
+  const { autoCapture = false } = await chrome.storage.local.get({ autoCapture: false });
+  if (!autoCapture) return;
+  const url = item.finalUrl || item.url;
+  if (!supported(url)) return;
+  try {
+    const result = await sendBatch({ urls: [url], pageUrl: item.referrer || '' });
+    if (result.accepted !== 1) return;
+    const current = await chrome.downloads.search({ id: item.id });
+    if (current.length !== 1 || current[0].state !== 'in_progress') return;
+    await chrome.downloads.cancel(item.id);
+    await chrome.downloads.erase({ id: item.id });
+  } catch (error) {
+    console.warn('BoltDM capture failed; keeping browser download:', error);
+  }
+}
+
+chrome.downloads.onCreated.addListener((item) => { void captureDownload(item); });
