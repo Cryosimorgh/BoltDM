@@ -1,61 +1,113 @@
-# Interactive extension setup helper. An installer checkbox grants permission to
-# launch this guide, not permission to bypass the browser's installation UI.
+# Interactive setup only. The browser itself must approve installation.
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Chrome', 'Edge')]
+    [ValidateSet('Chrome', 'Edge', 'Brave', 'Opera', 'Firefox')]
     [string]$Browser,
     [Parameter(Mandatory = $true)]
-    [string]$ExtensionPath
+    [string]$ExtensionPath,
+    [switch]$CheckOnly
 )
 
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Windows.Forms
 
-if (-not (Test-Path -LiteralPath (Join-Path $ExtensionPath 'manifest.json'))) {
-    [System.Windows.Forms.MessageBox]::Show(
-        'BoltDM Companion files are missing. Reinstall BoltDM before setting up the extension.',
-        'BoltDM Companion', 'OK', 'Error') | Out-Null
-    exit 1
-}
+# Explicit installation locations avoid scanning PATH, which may include
+# inaccessible Windows reparse points.
+$pf86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+$roots = @($env:LOCALAPPDATA, $env:ProgramFiles, $pf86) |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
-if ($Browser -eq 'Chrome') {
-    $relative = 'Google\Chrome\Application\chrome.exe'
-    $page = 'chrome://extensions/'
-} else {
-    $relative = 'Microsoft\Edge\Application\msedge.exe'
-    $page = 'edge://extensions/'
-}
-
-$roots = @($env:ProgramFiles, [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'), $env:LOCALAPPDATA)
-$exe = $null
-foreach ($root in $roots) {
-    if (-not $root) { continue }
-    $candidate = Join-Path $root $relative
-    if (Test-Path -LiteralPath $candidate) {
-        $exe = $candidate
+$spec = switch ($Browser) {
+    'Chrome' {
+        @{ Names = @('Google\Chrome\Application\chrome.exe'); Page = 'chrome://extensions/'; Kind = 'chromium' }
+        break
+    }
+    'Edge' {
+        @{ Names = @('Microsoft\Edge\Application\msedge.exe'); Page = 'edge://extensions/'; Kind = 'chromium' }
+        break
+    }
+    'Brave' {
+        @{ Names = @('BraveSoftware\Brave-Browser\Application\brave.exe'); Page = 'brave://extensions/'; Kind = 'chromium' }
+        break
+    }
+    'Opera' {
+        @{ Names = @('Programs\Opera\launcher.exe', 'Programs\Opera GX\launcher.exe',
+                     'Opera\launcher.exe', 'Opera GX\launcher.exe'); Page = 'opera://extensions/'; Kind = 'chromium' }
+        break
+    }
+    'Firefox' {
+        @{ Names = @('Mozilla Firefox\firefox.exe'); Page = 'about:debugging#/runtime/this-firefox'; Kind = 'firefox' }
         break
     }
 }
-if (-not $exe) {
-    [System.Windows.Forms.MessageBox]::Show(
-        "$Browser was not found. The extension remains available at:`n$ExtensionPath",
-        'BoltDM Companion', 'OK', 'Information') | Out-Null
+
+$exe = $null
+foreach ($root in $roots) {
+    foreach ($relative in $spec.Names) {
+        $candidate = Join-Path $root $relative
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            $exe = $candidate
+            break
+        }
+    }
+    if ($exe) { break }
+}
+
+if ($CheckOnly) {
+    [PSCustomObject]@{ browser = $Browser; installed = [bool]$exe; executable = $exe } |
+        ConvertTo-Json -Compress
     exit 0
 }
 
-# The path can be pasted into the Load unpacked folder picker.
-try { Set-Clipboard -Value $ExtensionPath -ErrorAction Stop }
-catch { } # Clipboard may be unavailable in remote/headless sessions.
-Start-Process -FilePath $exe -ArgumentList $page
-Start-Process -FilePath explorer.exe -ArgumentList ('"' + $ExtensionPath + '"')
+Add-Type -AssemblyName System.Windows.Forms
+if (-not (Test-Path -LiteralPath (Join-Path $ExtensionPath 'manifest.json') -PathType Leaf)) {
+    [System.Windows.Forms.MessageBox]::Show(
+        'BoltDM Companion is missing. Reinstall BoltDM before setting up the extension.',
+        'BoltDM Companion', 'OK', 'Error') | Out-Null
+    exit 1
+}
+if (-not $exe) {
+    $notice = @"
+$Browser was not detected in the usual installation locations.
+The extension is saved at:
+$ExtensionPath
+"@
+    [System.Windows.Forms.MessageBox]::Show(
+        $notice, 'BoltDM Companion', 'OK', 'Information') | Out-Null
+    exit 0
+}
+
+try { Set-Clipboard -Value $ExtensionPath -ErrorAction Stop } catch {}
+Start-Process -FilePath $exe -ArgumentList $spec.Page
+Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $ExtensionPath + '"')
+
+if ($spec.Kind -eq 'firefox') {
+    $instructions = @"
+Firefox is open to about:debugging.
+
+1. Select 'This Firefox'.
+2. Select 'Load Temporary Add-on'.
+3. Open the BoltDM-Companion folder and choose manifest.json.
+4. Open the extension popup and enable 'Catch browser downloads automatically' if desired.
+
+Folder: $ExtensionPath
+
+IMPORTANT: Firefox removes temporary unsigned extensions when it restarts.
+Permanent installation requires Mozilla signing.
+"@
+} else {
+    $instructions = @"
+$Browser is open to its Extensions settings.
+
+1. Turn on Developer mode.
+2. Choose 'Load unpacked'.
+3. Select the BoltDM-Companion folder displayed in Explorer.
+4. Confirm the extension's requested permissions.
+5. Open the extension popup and enable 'Catch browser downloads automatically' if desired.
+
+Folder: $ExtensionPath
+"@
+}
 
 [System.Windows.Forms.MessageBox]::Show(
-    "$Browser is open to Extensions.`n`n" +
-    "1. Enable Developer mode.`n" +
-    "2. Click Load unpacked.`n" +
-    "3. Select the BoltDM-Companion folder shown in Explorer.`n" +
-    "   Folder path (also copied to clipboard):`n$ExtensionPath`n`n" +
-    "4. Approve the browser's extension permissions.`n" +
-    "5. To catch downloads automatically, open the BoltDM extension popup and enable 'Catch browser downloads automatically'.`n`n" +
-    'No browser settings or enterprise policies have been changed.',
+    $instructions + [Environment]::NewLine + 'No enterprise policies or browser security settings were changed by BoltDM.',
     'Install BoltDM Companion', 'OK', 'Information') | Out-Null
