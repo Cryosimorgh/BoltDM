@@ -14,6 +14,8 @@ const (
 	wmDestroy       = 0x0002
 	wmCommand       = 0x0111
 	wmRButtonUp     = 0x0205
+	wmContextMenu   = 0x007b
+	ninSelect       = 0x0400
 	wmLButtonDblClk = 0x0203
 	wmTray          = 0x8000 + 17
 	nifMessage      = 0x00000001
@@ -103,9 +105,11 @@ var (
 	pSetForegroundWnd = user32.NewProc("SetForegroundWindow")
 	pLoadImageW       = user32.NewProc("LoadImageW")
 	pLoadIconW        = user32.NewProc("LoadIconW")
+	pRegisterWindowMessageW = user32.NewProc("RegisterWindowMessageW")
 	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 	pShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
 	trayWindow        uintptr
+	taskbarCreated    uint32
 	trayNotify        notifyIconData
 	trayOnOpen        func()
 	trayOnPause       func()
@@ -120,6 +124,9 @@ func startTray(iconPath string, onOpen, onPause, onResume, onExit func()) func()
 		runtime.LockOSThread()
 		defer runtime.UnlockOSThread()
 		className, _ := syscall.UTF16PtrFromString("BoltDM.Tray.Window")
+		taskbarName, _ := syscall.UTF16PtrFromString("TaskbarCreated")
+		registered, _, _ := pRegisterWindowMessageW.Call(uintptr(unsafe.Pointer(taskbarName)))
+		taskbarCreated = uint32(registered)
 		title, _ := syscall.UTF16PtrFromString("BoltDM")
 		hInstance, _, _ := pGetModuleHandleW.Call(0)
 		wc := wndClassEx{CbSize: uint32(unsafe.Sizeof(wndClassEx{})), LpfnWndProc: syscall.NewCallback(trayWndProc), HInstance: hInstance, LpszClassName: className}
@@ -173,14 +180,19 @@ func loadTrayIcon(path string) uintptr {
 }
 
 func trayWndProc(hwnd uintptr, message uint32, wParam, lParam uintptr) uintptr {
+	if message != 0 && message == taskbarCreated {
+		pShellNotifyIconW.Call(nimAdd, uintptr(unsafe.Pointer(&trayNotify)))
+		pShellNotifyIconW.Call(nimSetVersion, uintptr(unsafe.Pointer(&trayNotify)))
+		return 0
+	}
 	switch message {
 	case wmTray:
-		switch uint32(lParam) {
-		case wmLButtonDblClk:
+		switch uint32(lParam & 0xffff) {
+		case wmLButtonDblClk, ninSelect:
 			if trayOnOpen != nil {
 				go trayOnOpen()
 			}
-		case wmRButtonUp:
+		case wmRButtonUp, wmContextMenu:
 			showTrayMenu(hwnd)
 		}
 		return 0
