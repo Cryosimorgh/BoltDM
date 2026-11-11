@@ -27,6 +27,10 @@ jobs:
         run: go vet ./...
       - name: Build application
         run: go build ./cmd/boltdm
+      - name: Build launcher
+        run: go build ./cmd/launcher
+      - name: Build icon generator
+        run: go build ./cmd/icon-gen
       - name: Build updater
         run: go build ./cmd/updater
       - name: JavaScript syntax
@@ -37,6 +41,7 @@ jobs:
           node --check extension/content.js
           node --check extension/popup.js
           node --check extension/service_worker.js
+          node --test extension/service_worker.test.cjs
       - name: Linux packaging script syntax
         if: runner.os == 'Linux'
         run: bash -n build.sh install-linux.sh
