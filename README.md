@@ -73,6 +73,16 @@ The extension is made for pages that contain many similar download buttons.
 
 The extension sends links directly to BoltDM on your computer. It does not use the browser's normal download list and does not require Free Download Manager.
 
+### Windows setup installer (recommended)
+
+The Windows release now includes `BoltDM-Setup-windows-amd64.exe`, a per-user installer that does not require administrator rights. It installs the native launcher, download service, tray icon, companion browser extension files, and an uninstaller. Startup at Windows sign-in is an optional task.
+
+During installation, **Chrome** and **Edge** each have an **unchecked** optional companion-extension setup checkbox. If selected, Setup opens that browser's extension-management page, opens the installed companion directory and copies its path to the clipboard. You then click **Developer mode → Load unpacked** and approve the requested permissions within the browser. This confirmation step cannot be automated for an unpublished unpacked extension. The installer never sets browser enterprise policies or forces an extension.
+
+To activate interception after adding the extension, turn on **Catch browser downloads automatically** in the extension popup; this remains off by default. Removing BoltDM uninstalls the bundled extension files; remove the loaded unpacked extension from the browser first to avoid leaving a broken entry.
+
+Build the Setup EXE after the Windows package is prepared using `packaging/windows/Build-Installer.ps1` (requires Inno Setup 6). The release workflow builds the Setup EXE alongside the portable ZIP.
+
 ### Catch browser downloads automatically (opt-in)
 
 1. Install the Windows release using `Install-BoltDM.cmd`; its standalone launcher also starts the background download listener at Windows sign-in.

@@ -62,3 +62,58 @@ jobs:
           test -x dist/boltdm-linux-amd64/boltdm-updater
           test -f dist/BoltDM-linux-amd64.tar.gz
           test -f dist/BoltDM-linux-amd64.tar.gz.sha256
+
+  windows-installer:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: false
+      - name: Build Windows binaries and icons
+        shell: powershell
+        run: .\build.ps1
+      - name: Prepare installer payload
+        shell: powershell
+        run: |
+          $dir = 'dist\BoltDM-windows-amd64'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Copy-Item 'dist\BoltDM.exe', 'dist\BoltDM-Launcher.exe', 'dist\BoltDM.ico' $dir
+          Copy-Item 'extension' "$dir\BoltDM-Companion" -Recurse
+          Copy-Item 'Install-BoltDM.cmd' $dir
+          Invoke-WebRequest -Uri 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile "$dir\yt-dlp.exe"
+          & "$dir\yt-dlp.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw 'yt-dlp verification failed' }
+      - name: Install Inno Setup compiler
+        shell: powershell
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --yes --no-progress --limit-output
+          }
+      - name: Compile setup executable
+        shell: powershell
+        run: .\packaging\windows\Build-Installer.ps1
+      - name: Smoke-test setup and uninstall
+        shell: powershell
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'BoltDM-smoke'
+          $installer = (Resolve-Path 'dist\BoltDM-Setup-windows-amd64.exe').Path
+          $p = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$target") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Setup failed: $($p.ExitCode)" }
+          foreach ($file in @('BoltDM.exe', 'BoltDM-Launcher.exe', 'BoltDM.ico', 'BoltDM-Companion\manifest.json')) {
+            if (-not (Test-Path (Join-Path $target $file))) { throw "Missing installed file: $file" }
+          }
+          $uninstall = Join-Path $target 'unins000.exe'
+          if (-not (Test-Path $uninstall)) { throw 'Uninstaller missing' }
+          $p = Start-Process -FilePath $uninstall -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Uninstall failed: $($p.ExitCode)" }
+          if (Test-Path (Join-Path $target 'BoltDM.exe')) { throw 'Uninstaller left BoltDM.exe' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-preview
+          path: |
+            dist/BoltDM-Setup-windows-amd64.exe
+            dist/BoltDM-Setup-windows-amd64.exe.sha256
+          if-no-files-found: error
