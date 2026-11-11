@@ -108,12 +108,32 @@ jobs:
               "dist\BoltDM-windows-amd64.zip.sha256" `
               -Encoding ascii
 
+      - name: Install Inno Setup compiler
+        shell: powershell
+        run: |
+          if (-not (Test-Path '${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe')) {
+            choco install innosetup --yes --no-progress --limit-output
+          }
+
+      - name: Build setup installer
+        shell: powershell
+        run: |
+          $ref = $env:GITHUB_REF_NAME
+          $version = '1.2.0'
+          if ($ref -match '^(?:release/)?v(\d+\.\d+\.\d+)') {
+            $version = $Matches[1]
+          }
+          .\packaging\windows\Build-Installer.ps1 -Version $version
+          if (-not (Test-Path 'dist\BoltDM-Setup-windows-amd64.exe')) { throw 'Installer missing' }
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows-release
           path: |
             dist/BoltDM-windows-amd64.zip
             dist/BoltDM-windows-amd64.zip.sha256
+            dist/BoltDM-Setup-windows-amd64.exe
+            dist/BoltDM-Setup-windows-amd64.exe.sha256
           if-no-files-found: error
 
   linux:
@@ -180,6 +200,8 @@ jobs:
 
           test -f release-assets/BoltDM-windows-amd64.zip
           test -f release-assets/BoltDM-windows-amd64.zip.sha256
+          test -f release-assets/BoltDM-Setup-windows-amd64.exe
+          test -f release-assets/BoltDM-Setup-windows-amd64.exe.sha256
 
           test -f release-assets/BoltDM-linux-amd64.tar.gz
           test -f release-assets/BoltDM-linux-amd64.tar.gz.sha256
@@ -208,6 +230,9 @@ jobs:
           set -euo pipefail
           expected="$(awk '{print $1}' BoltDM-windows-amd64.zip.sha256)"
           actual="$(sha256sum BoltDM-windows-amd64.zip | awk '{print $1}')"
+          test "$expected" = "$actual"
+          expected="$(awk '{print $1}' BoltDM-Setup-windows-amd64.exe.sha256)"
+          actual="$(sha256sum BoltDM-Setup-windows-amd64.exe | awk '{print $1}')"
           test "$expected" = "$actual"
 
       - name: Resolve release tag
@@ -239,6 +264,8 @@ jobs:
             gh release create "${RELEASE_TAG}"
             release-assets/BoltDM-windows-amd64.zip
             release-assets/BoltDM-windows-amd64.zip.sha256
+            release-assets/BoltDM-Setup-windows-amd64.exe
+            release-assets/BoltDM-Setup-windows-amd64.exe.sha256
             release-assets/BoltDM-linux-amd64.tar.gz
             release-assets/BoltDM-linux-amd64.tar.gz.sha256
             release-assets/BoltDM-linux-arm64.tar.gz
