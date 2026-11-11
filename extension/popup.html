@@ -13,6 +13,11 @@
   <p class="copy">Send the current YouTube page directly to BoltDM, or choose one download button and collect matching links from the page.</p>
   <button id="media" class="primary">Download current media page</button>
   <button id="start" class="secondary">Select download button</button>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:15px;font-size:11px;color:var(--text);cursor:pointer">
+    <input id="autoCapture" type="checkbox" style="accent-color:var(--gold)">
+    <span>Catch browser downloads automatically</span>
+  </label>
+  <p class="copy" style="margin:7px 0 0;font-size:10px">Off by default. Browser downloads continue normally if BoltDM is unavailable. Some authenticated downloads may still require the browser.</p>
   <div class="foot"><span>Direct localhost handoff</span><button id="manager">Open BoltDM</button></div>
 </div>
 <script src="popup.js"></script>
