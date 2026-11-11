@@ -273,7 +273,9 @@ func discoverExecutable(configured string, names ...string) (string, error) {
 func executableVersion(path string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, path, "--version").Output()
+	cmd := exec.CommandContext(ctx, path, "--version")
+	cmd.Env = mediaSubprocessEnv(os.Environ(), runtime.GOOS)
+	out, err := cmd.Output()
 	if err != nil {
 		return "unknown"
 	}
